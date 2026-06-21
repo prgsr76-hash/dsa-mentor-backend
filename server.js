@@ -36,13 +36,13 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-transporter.verify((error) => {
-  if (error) {
-    console.log('Email Config Error:', error);
-  } else {
-    console.log('Email Server Ready');
-  }
-});
+// transporter.verify((error) => {
+//   if (error) {
+//     console.log('Email Config Error:', error);
+//   } else {
+//     console.log('Email Server Ready');
+//   }
+// });
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
