@@ -10,7 +10,7 @@ const otpGenerator = require('otp-generator');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS
+// ====== CORS ======
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -19,8 +19,7 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ... rest of your code
-// ========== MONGODB CONNECTION ==========
+// ====== MONGODB ======
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dsa-mentor';
 
 mongoose.connect(MONGO_URI)
@@ -29,19 +28,33 @@ mongoose.connect(MONGO_URI)
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
 
-// ========== EMAIL CONFIG ==========
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER || 'your_email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your_app_password_here'
-  }
-});
+// ====== EMAIL TRANSPORTER (with error handling) ======
+let transporter;
+try {
+  transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER || 'your_email@gmail.com',
+      pass: process.env.EMAIL_PASS || 'your_app_password_here'
+    }
+  });
+  console.log('✅ Email transporter configured');
+} catch (error) {
+  console.error('❌ Email transporter error:', error.message);
+  // Fallback to a dummy transporter for testing
+  transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+      user: 'dummy@ethereal.email',
+      pass: 'dummy'
+    }
+  });
+}
 
-// ========== SCHEMAS ==========
-
+// ====== SCHEMAS ======
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -72,7 +85,7 @@ const problemSchema = new mongoose.Schema({
 
 const Problem = mongoose.model('Problem', problemSchema);
 
-// ========== AUTH MIDDLEWARE ==========
+// ====== AUTH MIDDLEWARE ======
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -87,7 +100,7 @@ const auth = async (req, res, next) => {
   }
 };
 
-// ========== SEND OTP FUNCTION ==========
+// ====== SEND OTP FUNCTION ======
 async function sendOTP(email, otp, type) {
   const subject = type === 'verify' ? 'Verify Your DSA Mentor Account' : 'Reset Your DSA Mentor Password';
   const html = `
@@ -98,22 +111,26 @@ async function sendOTP(email, otp, type) {
       <p style="text-align: center; font-size: 12px; color: #666;">This OTP will expire in 5 minutes.</p>
     </div>
   `;
-  await transporter.sendMail({
-    from: `"DSA Mentor" <${process.env.EMAIL_USER || 'your_email@gmail.com'}>`,
-    to: email,
-    subject: subject,
-    html: html
-  });
+  try {
+    await transporter.sendMail({
+      from: `"DSA Mentor" <${process.env.EMAIL_USER || 'your_email@gmail.com'}>`,
+      to: email,
+      subject: subject,
+      html: html
+    });
+  } catch (error) {
+    console.error('Send email error:', error);
+    throw new Error('Failed to send email');
+  }
 }
 
-// ========== TEST ROUTE ==========
+// ====== TEST ROUTE ======
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is running' });
 });
 
-// ========== AUTH ROUTES ==========
+// ====== AUTH ROUTES ======
 
-// 1. Send OTP for Registration
 app.post('/api/auth/send-otp', async (req, res) => {
   try {
     const { email } = req.body;
@@ -135,7 +152,6 @@ app.post('/api/auth/send-otp', async (req, res) => {
   }
 });
 
-// 2. Register with OTP
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { name, email, password, otp } = req.body;
@@ -161,7 +177,6 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// 3. Login (only if verified)
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -178,7 +193,6 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// 4. Forgot Password - Send OTP
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -200,7 +214,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-// 5. Reset Password with OTP
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -219,13 +232,12 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// 6. Get current user
 app.get('/api/auth/me', auth, async (req, res) => {
   const user = await User.findById(req.userId).select('-password');
   res.json({ user });
 });
 
-// ========== PROBLEM ROUTES ==========
+// ====== PROBLEM ROUTES ======
 
 app.get('/api/problems', auth, async (req, res) => {
   try {
@@ -305,6 +317,7 @@ app.put('/api/problems/:id/review', auth, async (req, res) => {
   }
 });
 
+// ====== START SERVER ======
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
