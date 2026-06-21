@@ -10,7 +10,7 @@ const otpGenerator = require('otp-generator');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ========== CORS CONFIGURATION ==========
+// CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -19,6 +19,7 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
+// ... rest of your code
 // ========== MONGODB CONNECTION ==========
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dsa-mentor';
 
