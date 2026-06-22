@@ -25,20 +25,16 @@ mongoose.connect(MONGO_URI)
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  connectionTimeout: 30000
-});
+const resend = require('resend');
 
+async function sendOTP(email, otp, type) {
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to: email,
+    subject: 'Your OTP',
+    html: `<h1>Your OTP is: ${otp}</h1>`
+  });
+}
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -80,44 +76,55 @@ const auth = async (req, res, next) => {
   }
 };
 
-async function sendOTP(email, otp, type) {
-  const subject = type === 'verify' ? 'Verify Your DSA Mentor Account' : 'Reset Your DSA Mentor Password';
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #0a0515; color: white; border-radius: 16px; border: 1px solid rgba(139,92,246,0.2);">
-      <h1 style="text-align: center; color: #8b5cf6;">DSA Mentor</h1>
-      <p style="text-align: center; color: #b0a0d0;">${type === 'verify' ? 'Verify your email address' : 'Reset your password'}</p>
-      <h1 style="text-align: center; color: #8b5cf6; font-size: 40px; letter-spacing: 8px;">${otp}</h1>
-      <p style="text-align: center; font-size: 12px; color: #666;">This OTP will expire in 5 minutes.</p>
-    </div>
-  `;
-  await transporter.sendMail({
-    from: `"DSA Mentor" <${process.env.EMAIL_USER || 'your_email@gmail.com'}>`,
-    to: email,
-    subject: subject,
-    html: html
-  });
-}
+const { Resend } = require('resend');
 
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend is running' });
-});
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
-app.post('/api/auth/send-otp', async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: 'Email already registered' });
-    await OTP.deleteMany({ email, type: 'verify' });
-    const otp = otpGenerator.generate(6, { digits: true, lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false });
-    await OTP.create({ email, otp, type: 'verify' });
-    await sendOTP(email, otp, 'verify');
-    res.json({ message: 'OTP sent successfully' });
-  } catch (error) {
-    console.error('Send OTP error:', error);
-    res.status(500).json({ error: 'Failed to send OTP' });
-  }
-});
+// async function sendOTP(email, otp, type) {
+//   const subject = type === 'verify' ? 'Verify Your DSA Mentor Account' : 'Reset Your DSA Mentor Password';
+//   const html = `
+//     <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #0a0515; color: white; border-radius: 16px; border: 1px solid rgba(139,92,246,0.2);">
+//       <h1 style="text-align: center; color: #8b5cf6;">DSA Mentor</h1>
+//       <p style="text-align: center; color: #b0a0d0;">${type === 'verify' ? 'Verify your email address' : 'Reset your password'}</p>
+//       <h1 style="text-align: center; color: #8b5cf6; font-size: 40px; letter-spacing: 8px;">${otp}</h1>
+//       <p style="text-align: center; font-size: 12px; color: #666;">This OTP will expire in 5 minutes.</p>
+//     </div>
+//   `;
+
+//   try {
+//     const data = await resend.emails.send({
+//       from: 'onboarding@resend.dev',
+//       to: email,
+//       subject: subject,
+//       html: html
+//     });
+//     console.log('Email sent:', data);
+//   } catch (error) {
+//     console.error('Email send error:', error);
+//     throw new Error('Failed to send email');
+//   }
+// }
+
+// app.get('/api/test', (req, res) => {
+//   res.json({ message: 'Backend is running' });
+// });
+
+// app.post('/api/auth/send-otp', async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     if (!email) return res.status(400).json({ error: 'Email is required' });
+//     const existing = await User.findOne({ email });
+//     if (existing) return res.status(400).json({ error: 'Email already registered' });
+//     await OTP.deleteMany({ email, type: 'verify' });
+//     const otp = otpGenerator.generate(6, { digits: true, lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false });
+//     await OTP.create({ email, otp, type: 'verify' });
+//     await sendOTP(email, otp, 'verify');
+//     res.json({ message: 'OTP sent successfully' });
+//   } catch (error) {
+//     console.error('Send OTP error:', error);
+//     res.status(500).json({ error: 'Failed to send OTP' });
+//   }
+// });
 
 app.post('/api/auth/register', async (req, res) => {
   try {
