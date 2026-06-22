@@ -77,6 +77,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.BREVO_SMTP_PASS
   }
 });
+console.log("BREVO_SMTP_USER:", process.env.BREVO_SMTP_USER);
+console.log("BREVO_SMTP_PASS EXISTS:", !!process.env.BREVO_SMTP_PASS);
 
 
 async function sendOTP(email, otp, type) {
