@@ -24,10 +24,12 @@ app.get('/', (req, res) => {
 });
 // ===== MONGODB =====
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dsa-mentor';
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000
+})
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log('MongoDB error:', err.message));
-
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_here';
 
 // ===== GMAIL SMTP TRANSPORTER =====
