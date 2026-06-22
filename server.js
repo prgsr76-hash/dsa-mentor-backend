@@ -25,8 +25,9 @@ app.get('/', (req, res) => {
 // ===== MONGODB =====
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dsa-mentor';
 mongoose.connect(MONGO_URI, {
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000
+  serverSelectionTimeoutMS: 5000,  // Fail faster
+  socketTimeoutMS: 10000,
+  connectTimeoutMS: 5000
 })
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log('MongoDB error:', err.message));
