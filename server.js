@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -79,7 +80,13 @@ const transporter = nodemailer.createTransport({
 });
 console.log("BREVO_SMTP_USER:", process.env.BREVO_SMTP_USER);
 console.log("BREVO_SMTP_PASS EXISTS:", !!process.env.BREVO_SMTP_PASS);
-
+transporter.verify((error, success) => {
+  if (error) {
+    console.log("SMTP Verify Error:", error);
+  } else {
+    console.log("SMTP Ready");
+  }
+});
 
 async function sendOTP(email, otp, type) {
   const subject = type === 'verify' ? 'Verify Your DSA Mentor Account' : 'Reset Your DSA Mentor Password';
