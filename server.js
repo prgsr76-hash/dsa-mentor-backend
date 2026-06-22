@@ -10,13 +10,7 @@ const nodemailer = require('nodemailer');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-transporter.verify(function(error, success) {
-  if (error) {
-    console.log("SMTP ERROR:", error);
-  } else {
-    console.log("SMTP Ready");
-  }
-});
+
 
 // ===== CORS =====
 app.use(cors({
@@ -51,6 +45,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS
   },
   tls: { rejectUnauthorized: false }
+});
+transporter.verify(function(error, success) {
+  if (error) {
+    console.log("SMTP ERROR:", error);
+  } else {
+    console.log("SMTP Ready");
+  }
 });
 
 // ===== SCHEMAS =====
