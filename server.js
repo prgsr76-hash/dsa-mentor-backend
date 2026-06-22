@@ -407,9 +407,9 @@ app.put('/api/problems/:id/review', auth, async (req, res) => {
 });
 
 // ===== START SERVER =====
-if (require.main === module) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server running on ${PORT}`);
   });
 }
 
